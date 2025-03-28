@@ -4,13 +4,21 @@ const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const API_KEY = 'AIzaSyD2CdHoW7NpyOMYFj9BCNE0xsYhKOFSOaI'; // Your Google API key
+
 app.get('/proxy', async (req, res) => {
-  const fileUrl = req.query.url;
-  if (!fileUrl) {
-    return res.status(400).send('Missing URL parameter');
+  const fileId = req.query.fileId;
+  if (!fileId) {
+    return res.status(400).send('Missing fileId parameter');
   }
 
   try {
+    // Use the Google Drive API to get the file metadata
+    const metadataUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?key=${API_KEY}&fields=webContentLink`;
+    const metadataResponse = await axios.get(metadataUrl);
+    const fileUrl = metadataResponse.data.webContentLink;
+
+    // Fetch the file using the webContentLink
     const response = await axios({
       url: fileUrl,
       method: 'GET',
@@ -19,9 +27,9 @@ app.get('/proxy', async (req, res) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'audio/mpeg',
         'Accept-Encoding': 'identity',
-        'Referer': 'https://drive.google.com/' // Add Referer header to mimic a browser request
+        'Referer': 'https://drive.google.com/'
       },
-      maxRedirects: 5 // Follow redirects
+      maxRedirects: 5
     });
 
     console.log('Response status:', response.status);
